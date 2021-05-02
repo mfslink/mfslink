@@ -13,7 +13,7 @@
     "package": "electron-forge package",
     "make": "electron-forge make"
   },
-  "author": "",
+  "author": "mfslink",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/mfslink/mfslink/issues"
@@ -37,7 +37,10 @@
   },
   "config": {
     "forge": {
-      "packagerConfig": {},
+      "packagerConfig": {
+        "icon": "logo.ico",
+        "copyright": "All Rights Reserved to mfslink and its affiliates."
+      },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",

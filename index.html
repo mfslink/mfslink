@@ -46,9 +46,9 @@
       
       <label class="channel-label">
         Transmitting Channel:
-        <input type="text" onkeydown="return false;" class="channel-input" id="channel-input" value="UNICOM"/>
+        <input type="text" onkeydown="return false;" class="channel-input" id="channel-input" value="UNICOM_122.800"/>
       </label>
-      <br>
+      <p id="errors"></p>
       <br>
 
       <div id="chatSection">
@@ -70,11 +70,23 @@
     </div>
 
     <script>
+
+      const { remote } = require("electron")
+
+      function throwerror(err){
+        let win = remote.getCurrentWindow();
+        win.setSize(840, 600)
+        document.getElementById("errors").innerText = err;
+        setTimeout(function(){
+          document.getElementById("errors").innerText = "";
+        win.setSize(790, 600)
+        }, 4000)
+      }
+
+
         const { io } = require("socket.io-client");
 
         const fetch = require("node-fetch")
-
-        const { remote } = require("electron")
 
         const socket = io("https://mfslink-ws.aerotechnology.repl.co");
         window.onload = async function(){
@@ -82,9 +94,7 @@
 let releases = await fetch("https://api.github.com/repos/mfslink/mfslink/releases/latest");
 let latest = await releases.json();
 
-console.log(remote.app.getVersion())
-
-if(remote.app.getVersion() !== latest.tag_name) alert("A new version is now available to download! Download it at " + latest.html_url)
+if(remote.app.getVersion() !== latest.tag_name) console.log("A new version is now available to download! Download it at " + latest.html_url)
 
             socket.on("connect", () => {
 
@@ -99,11 +109,10 @@ if(remote.app.getVersion() !== latest.tag_name) alert("A new version is now avai
                 }, 3000)
                 
                 socket.on("chat", msg => {
-                    if(msg.channel.toUpperCase() == document.getElementById("channel-input").value.toUpperCase()){
-                        const div = document.createElement('div')
-                        div.classList.add('render-message')
-                        div.innerHTML = msg.message
-                        document.getElementById("chat-window").appendChild(div)
+                    if(msg.channel == document.getElementById("channel-input").value){
+                        let div = ""
+                        div = "<div class=\"render-message\">" + msg.message + document.getElementById("chat-window").innerHTML + "</div>"
+                        document.getElementById("chat-window").innerHTML = div
                     }
                 })
 
@@ -121,8 +130,8 @@ if(remote.app.getVersion() !== latest.tag_name) alert("A new version is now avai
 
             socket.on("disconnect", () => {
               alert("Websocket Connection with the server was disconnected. Please try restarting the application. If the problem persists, please wait for 5 minutes and try again. If problem still persists, please create an issue in our github.")
-              let window = remote.getCurrentWindow();
-              window.close()
+              let win = remote.getCurrentWindow();
+              win.close()
             });
 
 
@@ -133,13 +142,23 @@ if(remote.app.getVersion() !== latest.tag_name) alert("A new version is now avai
 const chat = document.querySelector('.chat-form')
 const Input = document.querySelector('.chat-input')
 
-setInterval(function(){
-    document.getElementById("chat-window").scrollTo(0,document.querySelector(".chat-window").scrollHeight);
-}, 100)
 
 chat.addEventListener('submit', event => {
   event.preventDefault()
-  if(document.getElementById("channel-input").value == "")return alert("No transmitting channel set. If you are not in the game or in the menu, type \"UNICOM\" in the input field at the top of the screen. If you are in an airport, type in the ICAO code of the airport(e.g. KLAX). If you are airborne, use the region code of the continent you are in(e.g. NA). For more information checkout our documentation.")
+  if(document.getElementById("channel-input").value == "")return throwerror("No transmitting channel set. Please enter a link_frequency(airport_frequency) into the box at the top of the app.(e.g. KLAS Unicom is \"KLAS_122.950\", KLAS clerance delivery is \"KLAS_118.000\", global unicome is \"UNICOM_122.800\")")
+  
+  let channel = document.getElementById("channel-input").value
+  let channelsplited = channel.split("_")
+  if(channelsplited.length !== 2)return throwerror("Message was not sent because of incorrect link_frequency entered. an example of an link_frequency of Las Vegas Unicom is \"KLAS_122.950\".")
+  let channel1 = channelsplited[0]
+  let channel2 = channelsplited[1]
+  let channel2splitted = channel2.split(".")
+  if(channel2splitted[0].length !== 3)return throwerror("Message was not sent because of incorrect link_frequency entered. an example of an link_frequency of Las Vegas Unicom is \"KLAX_122.950\".")
+  if(channel2splitted[1].length !== 3)return throwerror("Message was not sent because of incorrect link_frequency entered. an example of an link_frequency of Las Vegas Unicom is \"KLAX_122.950\".")
+  
+  if(isNaN(channel2splitted[0]) == true)return throwerror("Message was not sent because of incorrect link_frequency entered. an example of an link_frequency of Las Vegas Unicom is \"KLAX_122.950\".")
+  if(isNaN(channel2splitted[1]) == true)return throwerror("Message was not sent because of incorrect link_frequency entered. an example of an link_frequency of Las Vegas Unicom is \"KLAX_122.950\".")
+  
   socket.emit('chat', { callsign: document.querySelector('.callsign-input').value, message: Input.value, channel: document.querySelector('.channel-input').value })
   Input.value = ''
 })

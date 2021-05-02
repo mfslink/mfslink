@@ -7,6 +7,7 @@ function createWindow () {
     height: 600,
     autoHideMenuBar: true,
     resizable: false,
+    icon: __dirname + "/logo.ico",
     webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
