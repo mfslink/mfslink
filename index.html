@@ -1,16 +1,151 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <title>Hello World!</title>
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
-</head>
-<body style="background: white;">
-    <h1>Hello World!</h1>
-    <p>
-        We are using Node.js <span id="node-version"></span>,
-        Chromium <span id="chrome-version"></span>,
-        and Electron <span id="electron-version"></span>.
-    </p>
-</body>
+  <head>
+    <title>mfslink</title>
+    <style>
+        #container {
+          width: 700px;
+          margin: 0 auto;
+        }
+        .chat-input {
+          width: 650px;
+          height: 35px;
+          border: solid 1px #444;
+        }
+        
+        .callsign-input {
+          width: 650px;
+          height: 35px;
+          border: solid 1px #444;
+        }
+        .chat-submit {
+          width: 50px;
+          height: 35px;
+          border: solid 1px #444;
+        }
+        .chat-window {
+          height: 300px;
+          width: 700px;
+          overflow: scroll;
+        }
+        #chatSection {
+          width: 700px;
+          float: left;
+          border: 1px grey solid;
+          border-radius: 10px;
+          padding: 10px;
+        }
+      </style>
+  </head>
+  <body>
+    <div id="container">
+      <h1>
+        
+      </h1>
+
+      
+      <label class="channel-label">
+        Transmitting Channel:
+        <input type="text" onkeydown="return false;" class="channel-input" id="channel-input" value="UNICOM"/>
+      </label>
+      <br>
+      <br>
+
+      <div id="chatSection">
+        <div class="chat-window" id="chat-window"><h1>WEBSOCKET CONNECTING...</h1></div>
+        <form class="chat-form">
+            
+          <label class="callsign-label">
+            Your Username/Callsign:
+            <input type="text" onkeydown="return false;" class="callsign-input" id="callsign-input" required>
+          </label>
+          <br>
+          <label class="chat-label">
+            Enter a message:
+            <input type="text" onkeydown="return false;" class="chat-input" id="chat-input" required>
+          </label>
+          <input type="submit" class="chat-submit" value="enter" />
+        </form>
+      </div>
+    </div>
+
+    <script>
+        const { io } = require("socket.io-client");
+
+        const fetch = require("node-fetch")
+
+        const { remote } = require("electron")
+
+        const socket = io("https://mfslink-ws.aerotechnology.repl.co");
+        window.onload = async function(){
+
+let releases = await fetch("https://api.github.com/repos/mfslink/mfslink/releases/latest");
+let latest = await releases.json();
+
+console.log(remote.app.getVersion())
+
+if(remote.app.getVersion() !== latest.tag_name) alert("A new version is now available to download! Download it at " + latest.html_url)
+
+            socket.on("connect", () => {
+
+                document.getElementById("chat-window").innerHTML = "<h1>Websocket Connected!</h1>";
+
+                setTimeout(function(){
+                document.getElementById("chat-window").innerHTML = "";
+                document.getElementById("channel-input").onkeydown = "";
+                document.getElementById("callsign-input").onkeydown = "";
+                document.getElementById("chat-input").onkeydown = "";
+
+                }, 3000)
+                
+                socket.on("chat", msg => {
+                    if(msg.channel.toUpperCase() == document.getElementById("channel-input").value.toUpperCase()){
+                        const div = document.createElement('div')
+                        div.classList.add('render-message')
+                        div.innerHTML = msg.message
+                        document.getElementById("chat-window").appendChild(div)
+                    }
+                })
+
+
+                setInterval(function(){
+                    console.log("Checking Websocket Status.")
+
+                    socket.emit("ping", { id: socket.id })
+                }, 30000)
+
+                socket.on("pong", msg => {
+                    console.log(msg)
+                })
+            });
+
+            socket.on("disconnect", () => {
+              alert("Websocket Connection with the server was disconnected. Please try restarting the application. If the problem persists, please wait for 5 minutes and try again. If problem still persists, please create an issue in our github.")
+              let window = remote.getCurrentWindow();
+              window.close()
+            });
+
+
+            
+        }
+
+
+const chat = document.querySelector('.chat-form')
+const Input = document.querySelector('.chat-input')
+
+setInterval(function(){
+    document.getElementById("chat-window").scrollTo(0,document.querySelector(".chat-window").scrollHeight);
+}, 100)
+
+chat.addEventListener('submit', event => {
+  event.preventDefault()
+  if(document.getElementById("channel-input").value == "")return alert("No transmitting channel set. If you are not in the game or in the menu, type \"UNICOM\" in the input field at the top of the screen. If you are in an airport, type in the ICAO code of the airport(e.g. KLAX). If you are airborne, use the region code of the continent you are in(e.g. NA). For more information checkout our documentation.")
+  socket.emit('chat', { callsign: document.querySelector('.callsign-input').value, message: Input.value, channel: document.querySelector('.channel-input').value })
+  Input.value = ''
+})
+
+
+    
+    </script>
+  </body>
 </html>
