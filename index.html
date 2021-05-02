@@ -88,7 +88,7 @@
 
         const fetch = require("node-fetch")
 
-        const socket = io("https://mfslink-ws.aerotechnology.repl.co");
+        const socket = io("https://mfslink-ws.aerotechnology.repl.co",{transports: ['websocket'], upgrade: false});
         window.onload = async function(){
 
 let releases = await fetch("https://api.github.com/repos/mfslink/mfslink/releases/latest");

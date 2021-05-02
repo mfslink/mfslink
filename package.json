@@ -45,7 +45,7 @@
         {
           "name": "@electron-forge/maker-squirrel",
           "config": {
-            "name": "multiplayer_link"
+            "name": "mfslink"
           }
         },
         {
