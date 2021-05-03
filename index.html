@@ -126,7 +126,7 @@
 let releases = await fetch("https://api.github.com/repos/mfslink/mfslink/releases/latest");
 let latest = await releases.json();
 
-if(remote.app.getVersion() !== latest.tag_name) console.log("A new version is now available to download! Download it at " + latest.html_url)
+if(remote.app.getVersion() !== latest.tag_name) throwerror("A new version is now available to download! Download it at " + latest.html_url)
 
             socket.on("connect", () => {
 
