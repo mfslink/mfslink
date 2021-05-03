@@ -23,6 +23,11 @@
           height: 35px;
           border: solid 1px #444;
         }
+        .clear-chat {
+          width: 100px;
+          height: 20px;
+          border: solid 1px #444;
+        }
         .chat-window {
           height: 300px;
           width: 700px;
@@ -45,8 +50,16 @@
 
       
       <label class="channel-label">
+        mfslink custom server:
+        <input type="text" class="server-input" id="server-input" value="https://mfslink-ws.aerotechnology.repl.co" required/>
+        <button class="set-server" id="set-server" onclick="setserver()">Set</button>
+
+      </label>
+      <br>
+      <label class="channel-label">
         Transmitting Channel:
         <input type="text" onkeydown="return false;" class="channel-input" id="channel-input" value="UNICOM_122.800"/>
+        <button class="clear-chat" id="clear-chat" onclick="document.getElementById('chat-window').innerHTML=''" disabled>Clear Chat</button>
       </label>
       <p id="errors"></p>
       <br>
@@ -71,6 +84,23 @@
 
     <script>
 
+      const storage = require('electron-json-storage');
+
+      function setserver(){
+        if(document.getElementById("server-input").value == "")return throwerror("You must enter a custom server to continue.")
+        storage.set('server', { ip: document.getElementById("server-input").value }, function(error) {
+          if (error){
+            throw error;
+          }else{
+            alert("Your Custom Server is now set! Before you can start sending messages on your custom server, your application needs a restart. The server will now run under your custom server, instead of the default one. Read our documentation on how to return to default server.")
+            let win = remote.getCurrentWindow();
+            win.close()
+          }
+        });
+      }
+
+      let ready = false;
+
       const { remote } = require("electron")
 
       function throwerror(err){
@@ -87,8 +117,10 @@
         const { io } = require("socket.io-client");
 
         const fetch = require("node-fetch")
+        var ip = storage.getSync('server');
 
-        const socket = io("https://mfslink-ws.aerotechnology.repl.co",{transports: ['websocket'], upgrade: false});
+        document.getElementById("server-input").value = ip.ip || "https://mfslink-ws.aerotechnology.repl.co";
+        const socket = io(ip.ip || "https://mfslink-ws.aerotechnology.repl.co",{transports: ['websocket'], upgrade: false});
         window.onload = async function(){
 
 let releases = await fetch("https://api.github.com/repos/mfslink/mfslink/releases/latest");
@@ -105,11 +137,13 @@ if(remote.app.getVersion() !== latest.tag_name) console.log("A new version is no
                 document.getElementById("channel-input").onkeydown = "";
                 document.getElementById("callsign-input").onkeydown = "";
                 document.getElementById("chat-input").onkeydown = "";
-
+                document.getElementById("clear-chat").disabled = false;
+                // document.getElementById("set-server").disabled = false;
+                ready = true;
                 }, 3000)
                 
                 socket.on("chat", msg => {
-                    if(msg.channel == document.getElementById("channel-input").value){
+                    if(msg.channel == document.getElementById("channel-input").value && ready == true){
                         let div = ""
                         div = "<div class=\"render-message\">" + msg.message + document.getElementById("chat-window").innerHTML + "</div>"
                         document.getElementById("chat-window").innerHTML = div

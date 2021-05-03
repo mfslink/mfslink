@@ -4,7 +4,7 @@ const path = require('path')
 function createWindow () {
   const win = new BrowserWindow({
     width: 790,
-    height: 600,
+    height: 650,
     autoHideMenuBar: true,
     resizable: false,
     icon: __dirname + "/logo.ico",
